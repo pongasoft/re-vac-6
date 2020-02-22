@@ -1,0 +1,15 @@
+Volume knobs:
+width 280 (front)
+width 130 (folded front)
+
+Max 1 knob:
+width 150 -l rgb(255,255,0) -k rgb(200,200,200)
+
+Max 2 knob:
+width 150 -l rgb(105, 122, 244) -k rgb(200,200,200)
+
+Max 3 knob:
+width 150 -l rgb(230, 9, 196) -k rgb(200,200,200)
+
+Zoom Level / Soft Clipping Level / Hud alpha knobs:
+width 150 -k rgb(200,200,200)
