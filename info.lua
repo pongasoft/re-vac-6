@@ -13,7 +13,7 @@ short_name = "VAC-6"
 
 product_id = "com.pongasoft.VAC6"
 manufacturer = "pongasoft"
-version_number = "1.0.0f11"
+version_number = "1.0.1f13"
 device_type = "creative_fx"
 supports_patches = false
 accepts_notes = false

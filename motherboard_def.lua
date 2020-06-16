@@ -277,6 +277,13 @@ jbox.add_stereo_audio_routing_target{
   auto_route_enable = true
 }
 
+jbox.add_stereo_audio_routing_target{
+  signal_type = "normal",
+  left = "/audio_inputs/audioInputLeft",
+  right = "/audio_inputs/audioInputRight",
+  auto_route_enable = true
+}
+
 -- handle no license case
 jbox.set_effect_auto_bypass_routing {
   {
