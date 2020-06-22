@@ -99,6 +99,10 @@ Build finished
 Release notes
 -------------
 
+#### 1.0.1 - 2020/06/18
+
+* Fixed bounce in place issue
+
 #### 1.0.0 - 2016/04/11
 
 * First release.
