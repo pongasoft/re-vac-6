@@ -7,97 +7,82 @@ Notes
 -----
 
 * This device is deprecated as the new version was released open source as a vst plugin and you can chek [VAC-6V](https://github.com/pongasoft/vst-vac-6v) which has better concepts and features.
-
 * Nonetheless, the source code is released following Reason Studios decision to open up the Rack Extension SDK platform allowing for this kind of project to be made publicly available
-
 * It is mostly meant as an example of a fully functional RE and the code is sparsely documented. I have since used C++ more intensively (in Jamba and other VST plugins) and would probably make very different implementation decisions now, especially being more familiar with "modern" C++.
+* The master branch is currently unreleased as the code has been updated to use [re-cmake](https://github.com/pongasoft/re-cmake) and RE SDK 4.2.0 but there are no new features. The advantage is that it is much easier to build and can be built on both macOS and Windows10.
 
-* Unfortunately, the SDK does not come with a CMakefile making this project tied to a single platform (macOS being the one I am using).
+### Requirements
 
-* I am also not including any IDE (XCode or other) related files because of how it ends up being tied to install locations (which could be fixed as well with a CMakefile).
+* This project requires CMake (minimum version 3.13)
+* This project currently expects RE SDK 4.2.0 or 4.1.0 to be installed on the machine (it will not download it for you)
+* Due to the RE SDK requirements, this project also requires python 3 to be installed
+* It has been tested on macOS 10.14.6 with Xcode 9 installed
+* It has been tested on Windows 10 with Visual Studio 16 2019 build tools
 
-Requirements
-------------
-
-* This project builds on macOS (10.13.6)
-
-* This project uses RE SDK version 2.2 (location defined in `jukebox.py` and should be changed according to your system). It has **not** been tested with a more recent version of the SDK (I do know for a fact that the options required by `build45.py` have changed since 2.2).
-
-* This projects depends on [pongasoft/re-common@v1.0.1](https://github.com/pongasoft/re-common/tree/v1.0.1) which needs to be installed locally (location defined in `jukebox.py` to be `../re-common` but can be changed)
-
-# Structure
+### Structure
 
 * `Design` contains the Pixelmator files used to create the graphics
-
 * `GUI2D` is a standard RE SDK folder which contains the images (png format) as well as `device_2D.lua` and `hdgui_2D.lua` files which defines the UI
-
 * `Resources` is a standard RE SDK folder which contains the strings (English only) displayed in the UI
-
-* `src/cpp` contains the C++11 source code for the device
-
+* `src/cpp` contains the C++ source code for the device
 * `info.lua`, `motherboard_def.lua` and `realtime_controller.lua` are standard RE SDK files for defining the device
-
 * `display.lua` is the standard SDK file which contains the lua code for the UI (various custom displays)
+* `configure.py` is the python script you use to configure the CMake build
 
-* `build-dev.sh` and `build-prod.sh` are the main 2 scripts to build the device for dev and prod respectively. They are simple wrapper which invokes the `build45.py` script with the correct set of options
+### Implementation notes
 
-* `copy-resources.sh` is another wrapper script to only copy the resources without full rebuild (ex: when working on the UI only there is no need to rebuild/repackage the source code)
-
-* `render2D.sh` calls the `RE2DRender` process properly (with workaround to see the output in the console). This is the step that processes the content of `GUI2D` to produce the necessary graphic files for the rack extension.
-
-Implementation notes
---------------------
-
-* Because this device uses SDK 2.2, it uses C++11 (but be aware that it is a limited (by the SDK) version of C++11).
-
+* Because this device was originally created for SDK 2.2, it only uses C++11 (but be aware that it is a limited (by the SDK) version of C++11). The [re-common](https://github.com/pongasoft/re-common) framework it depends on uses C++17.
 * In order to render the main display in the UI, the implementation uses 256 properties to pass the necessary information from RT to UI. It uses a `PendingUpdates` class to limit the amount of changes per batch. RT owned strings were introduced in SDK 2.5 in order to handle this kind of use case (which would translate into 1 RT owned string property instead of 256 individual properties) and is most likely a much better design.
-
 * The class `Motherboard` models the `motherboard_def.lua` from a C++ point of view
-
 * The properties use a property manager (`IJBoxPropertyManager`) which automatically processes the `iPropertyDiffs` provided on each batch to update the properties.
-
 * The `Device` class represents the entry point and is the class that is the `privateState` in the C-style `JBox_Export_RenderRealtime` api. It contains 2 copies of the `DeviceState` class: one being the state from the previous batch and one the state for the current batch. At the end of the batch, the current state is copied into the previous state. This allow to see if values have changed and respond appropriately. This design inspired the first iteration of the Jamba framework (VST) but with refinement it then led to having the Property (aka Parameters in VST world) themselves hold the previous and current values which I now believe is a better design. I may retrofit this design in a future implementation...
 
-Building (macOS)
-----------------
+### Note about the RE SDK location
 
-* Run `render2D.sh` to generate the images and files necessary for the UI. This step generates a `GUI` folder with the results.
+You can install the SDK wherever you want on your system and provide it as an argument to the `configure.py` script. Or you can install (or create a link) in a default location:
 
-```
-> ./render2D.sh
-Rendering 2D
-/Volumes/Vault/Applications/JukeboxSDK_2.2/RE2DRender/RE2DRender.app/Contents/MacOS/RE2DRender /Volumes/Development/github/org.pongasoft/re-vac-6/GUI2D /Volumes/Development/github/org.pongasoft/re-vac-6/GUI
-Deleting Intermediate folder
-Deleting Output folder
+* `/Users/Shared/ReasonStudios/JukeboxSDK_<RE_SDK_VERSION>/SDK` for macOS
+* `C:/Users/Public/Documents/ReasonStudios/JukeboxSDK_<RE_SDK_VERSION>/SDK` for Windows
 
-[...]
+Also note that the `RE2DRender` program needs to be unzipped and is expected to be a sibling of `SDK` (can be changed as well).
 
-+ exit 0
----- End of PostProcess log
-```
+### Quick Starting guide
 
-* Run `build-dev.sh`
+#### Step 1 - Configure the build
 
-```
-> ./build-dev.sh
-Using /Volumes/Vault/Applications/JukeboxSDK_2.2/SDK/Tools/LLVM
-product_id: com.pongasoft.VAC6
-RACK_EXTENSION_NAME: VAC6
+Invoking the `configure.py` **creates** a `build` directory in the directory where the command is run. Although it is strongly recommended to run this command outside the source tree, the `build` directory is excluded in `.gitignore` and since everything is contained within the `build` folder it is easy to clean after the fact.
 
-[...]
+Running the `python3 configure.py -h` command will print the usage.
 
-Copying resources to installDir: /Users/ypujante/Library/Application Support/Propellerhead Software/RackExtensions_Dev/VAC6
+> #### Note
+> Depending on how `python` is installed on your system you may have to invoke it differently.
 
-[...]
+If you have setup the RE SDK in its default location, as specified above, simply run `python3 configure.py` otherwise use the `-p` option to specify its location.
 
-install_name_tool -id com.pongasoft.VAC6 '/Users/ypujante/Library/Application Support/Propellerhead Software/RackExtensions_Dev/VAC6/VAC6.dylib'
-Build finished
-```
+#### Step 2 - Install the plugin
 
-* The previous step automatically installs the newly built RE into the default folder for dev REs. You can now start Reason Recon and load the rack extension. Note that it will **not** appear in normal Reason. You need to start Reason Recon.
+After running the configure script, simply go into the newly generated `build` folder and run `re.sh install` (resp. `re.bat install`). This will build the plugin and install it in its default location.
+
+> #### Note
+> Simply run `re.sh -h` (resp. `re.bat -h`) for help with the command
+
+#### Step 3 - Try the plugin
+
+You can then open Recon and load the newly built `VAC6` rack extension (you will find it under `Effects | pongasoft | VAC-6 Volume Analyzer & Controller`)
+
+> #### Info
+> The plugin will **only** appear in Recon **not** Reason 
+
+### Changing the code, Debugging, etc...
+
+If you want to change the code, run a debugger, etc... you can check the instructions for the [re-blank-plugin](https://github.com/pongasoft/re-blank-plugin#quick-starting-guide) which explain how to generate an XCode project, load it in an IDE, etc... 
 
 Release notes
 -------------
+
+#### master (unreleased)
+
+* Upgraded to use [re-cmake](https://github.com/pongasoft/re-cmake) (removed all unnecessary files and added CMake build files) 
 
 #### 1.0.1 - 2020/06/18
 
