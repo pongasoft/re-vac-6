@@ -1,3 +1,6 @@
+> [!Warning]
+> This project is now hosted on [Codeberg](https://codeberg.org/pongasoft/re-vac-6).
+ 
 VAC-6 - Volume Analyzer & Controller for Reason
 ===============================================
 
